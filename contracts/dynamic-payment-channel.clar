@@ -10,3 +10,16 @@
 (define-constant ERR-INVALID-SIGNATURE (err u5))
 (define-constant ERR-CHANNEL-CLOSED (err u6))
 (define-constant ERR-INVALID-STATE (err u7))
+
+;; Data Maps
+(define-map channels
+  { channel-id: (buff 32) }
+  {
+    participant1: principal,
+    participant2: principal,
+    balance1: uint,
+    balance2: uint,
+    nonce: uint,
+    state: (string-ascii 20)
+  }
+)
