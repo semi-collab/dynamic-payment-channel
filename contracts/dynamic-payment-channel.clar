@@ -28,3 +28,18 @@
   { participant: principal }
   { channel-ids: (list 100 (buff 32)) }
 )
+
+;; Private Functions
+(define-private (validate-signature (channel-id (buff 32)) (amount uint) (nonce uint) (signature (buff 65)))
+  (let (
+    (channel (unwrap! (map-get? channels { channel-id: channel-id }) ERR-CHANNEL-NOT-FOUND))
+    (participant1 (get participant1 channel))
+    (participant2 (get participant2 channel))
+    (message (concat (concat channel-id (uint-to-buff amount)) (uint-to-buff nonce)))
+  )
+    (asserts! (or
+      (is-eq (secp256k1-recover? message signature) (ok participant1))
+      (is-eq (secp256k1-recover? message signature) (ok participant2))
+    ) ERR-INVALID-SIGNATURE)
+  )
+)
