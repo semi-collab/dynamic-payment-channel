@@ -227,3 +227,11 @@
     )
   )
 )
+
+;; Constants for dispute resolution
+(define-data-var dispute-timeout uint u100) ;; Number of blocks for dispute resolution
+
+;; Initialize contract
+(begin
+  (print "Dynamic Payment Channel Network contract initialized")
+)
