@@ -207,3 +207,12 @@
     (ok true)
   )
 )
+
+;; Read-only Functions
+(define-read-only (get-channel-info (channel-id (buff 32)))
+  (map-get? channels { channel-id: channel-id })
+)
+
+(define-read-only (get-participant-channels (participant principal))
+  (map-get? participant-channels { participant: participant })
+)
