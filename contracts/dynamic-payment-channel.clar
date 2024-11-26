@@ -188,3 +188,22 @@
     (ok true)
   )
 )
+
+(define-public (resolve-dispute (channel-id (buff 32)))
+  (let (
+    (channel (unwrap! (map-get? channels { channel-id: channel-id }) ERR-CHANNEL-NOT-FOUND))
+  )
+    (asserts! (is-eq (get state channel) "DISPUTED") ERR-INVALID-STATE)
+    (asserts! (>= block-height (+ (var-get dispute-timeout) (get dispute-block channel))) ERR-INVALID-STATE)
+    
+    (try! (as-contract (stx-transfer? (get balance1 channel) tx-sender (get participant1 channel))))
+    (try! (as-contract (stx-transfer? (get balance2 channel) tx-sender (get participant2 channel))))
+    
+    (map-set channels
+      { channel-id: channel-id }
+      (merge channel { state: "CLOSED" })
+    )
+    
+    (ok true)
+  )
+)
