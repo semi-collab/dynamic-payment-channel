@@ -23,3 +23,8 @@
     state: (string-ascii 20)
   }
 )
+
+(define-map participant-channels
+  { participant: principal }
+  { channel-ids: (list 100 (buff 32)) }
+)
