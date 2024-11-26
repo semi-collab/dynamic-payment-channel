@@ -216,3 +216,14 @@
 (define-read-only (get-participant-channels (participant principal))
   (map-get? participant-channels { participant: participant })
 )
+
+;; Error Handling
+(define-public (handle-error (error (response bool uint)))
+  (match error
+    success (ok success)
+    error (begin
+      (print (concat "Error: " (uint-to-buff error)))
+      (err error)
+    )
+  )
+)
