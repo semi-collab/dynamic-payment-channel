@@ -29,6 +29,30 @@
   { channel-ids: (list 100 (buff 32)) }
 )
 
+;; Helper Functions
+(define-private (uint-to-buff (value uint))
+  (unwrap-panic (as-max-len? (concat 
+    (unwrap-panic (as-max-len? (concat 
+      (unwrap-panic (as-max-len? (concat 
+        (unwrap-panic (as-max-len? (concat 
+          0x00 
+          (if (> value u16777215) (buff-to-u8 (/ value u16777216)) 0x00)
+        ) u1))
+        (if (> value u65535) (buff-to-u8 (mod (/ value u65536) u256)) 0x00)
+      ) u2))
+      (if (> value u255) (buff-to-u8 (mod (/ value u256) u256)) 0x00)
+    ) u3))
+    (buff-to-u8 (mod value u256))
+  ) u4))
+)
+
+(define-private (buff-to-u8 (byte uint))
+  (unwrap-panic (element-at 
+    0x000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+    byte
+  ))
+)
+
 ;; Private Functions
 (define-private (validate-signature (channel-id (buff 32)) (amount uint) (nonce uint) (signature (buff 65)))
   (let (
