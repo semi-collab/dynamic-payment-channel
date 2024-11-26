@@ -54,3 +54,34 @@
     )
   )
 )
+
+;; Public Functions
+(define-public (create-channel (participant2 principal) (initial-balance1 uint) (initial-balance2 uint))
+  (let (
+    (channel-id (sha256 (concat (concat (serialize-principal tx-sender) (serialize-principal participant2)) (uint-to-buff block-height))))
+  )
+    (asserts! (is-none (map-get? channels { channel-id: channel-id })) ERR-CHANNEL-EXISTS)
+    (asserts! (>= (stx-get-balance tx-sender) initial-balance1) ERR-INSUFFICIENT-BALANCE)
+    (asserts! (>= (stx-get-balance participant2) initial-balance2) ERR-INSUFFICIENT-BALANCE)
+    
+    (try! (stx-transfer? initial-balance1 tx-sender (as-contract tx-sender)))
+    (try! (stx-transfer? initial-balance2 participant2 (as-contract tx-sender)))
+    
+    (map-set channels
+      { channel-id: channel-id }
+      {
+        participant1: tx-sender,
+        participant2: participant2,
+        balance1: initial-balance1,
+        balance2: initial-balance2,
+        nonce: u0,
+        state: "OPEN"
+      }
+    )
+    
+    (update-participant-channels tx-sender channel-id)
+    (update-participant-channels participant2 channel-id)
+    
+    (ok channel-id)
+  )
+)
