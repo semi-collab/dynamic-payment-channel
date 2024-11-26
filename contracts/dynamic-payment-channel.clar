@@ -43,3 +43,14 @@
     ) ERR-INVALID-SIGNATURE)
   )
 )
+
+(define-private (update-participant-channels (participant principal) (channel-id (buff 32)))
+  (let (
+    (current-channels (default-to { channel-ids: (list) } (map-get? participant-channels { participant: participant })))
+  )
+    (map-set participant-channels
+      { participant: participant }
+      { channel-ids: (unwrap! (as-max-len? (append (get channel-ids current-channels) channel-id) u100) ERR-INVALID-STATE) }
+    )
+  )
+)
