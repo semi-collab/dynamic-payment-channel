@@ -82,7 +82,7 @@
 ;; Public Functions
 (define-public (create-channel (participant2 principal) (initial-balance1 uint) (initial-balance2 uint))
   (let (
-    (channel-id (sha256 (concat (concat (serialize-principal tx-sender) (serialize-principal participant2)) (uint-to-buff block-height))))
+    (channel-id (sha256 (concat (concat (as-max-len? (concat tx-sender participant2) u60) (uint-to-buff block-height)) (uint-to-buff initial-balance1))))
   )
     (asserts! (is-none (map-get? channels { channel-id: channel-id })) ERR-CHANNEL-EXISTS)
     (asserts! (>= (stx-get-balance tx-sender) initial-balance1) ERR-INSUFFICIENT-BALANCE)
