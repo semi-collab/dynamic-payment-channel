@@ -85,3 +85,30 @@
     (ok channel-id)
   )
 )
+
+(define-public (fund-channel (channel-id (buff 32)) (amount uint))
+  (let (
+    (channel (unwrap! (map-get? channels { channel-id: channel-id }) ERR-CHANNEL-NOT-FOUND))
+  )
+    (asserts! (or
+      (is-eq tx-sender (get participant1 channel))
+      (is-eq tx-sender (get participant2 channel))
+    ) ERR-UNAUTHORIZED)
+    (asserts! (is-eq (get state channel) "OPEN") ERR-CHANNEL-CLOSED)
+    
+    (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
+    
+    (if (is-eq tx-sender (get participant1 channel))
+      (map-set channels
+        { channel-id: channel-id }
+        (merge channel { balance1: (+ (get balance1 channel) amount) })
+      )
+      (map-set channels
+        { channel-id: channel-id }
+        (merge channel { balance2: (+ (get balance2 channel) amount) })
+      )
+    )
+    
+    (ok true)
+  )
+)
