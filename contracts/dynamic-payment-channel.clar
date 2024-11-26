@@ -112,3 +112,35 @@
     (ok true)
   )
 )
+
+(define-public (make-payment (channel-id (buff 32)) (amount uint) (nonce uint) (signature (buff 65)))
+  (let (
+    (channel (unwrap! (map-get? channels { channel-id: channel-id }) ERR-CHANNEL-NOT-FOUND))
+  )
+    (asserts! (is-eq (get state channel) "OPEN") ERR-CHANNEL-CLOSED)
+    (asserts! (> nonce (get nonce channel)) ERR-INVALID-STATE)
+    (try! (validate-signature channel-id amount nonce signature))
+    
+    (if (is-eq tx-sender (get participant1 channel))
+      (asserts! (<= amount (get balance1 channel)) ERR-INSUFFICIENT-BALANCE)
+      (asserts! (<= amount (get balance2 channel)) ERR-INSUFFICIENT-BALANCE)
+    )
+    
+    (map-set channels
+      { channel-id: channel-id }
+      (merge channel {
+        balance1: (if (is-eq tx-sender (get participant1 channel))
+          (- (get balance1 channel) amount)
+          (+ (get balance1 channel) amount)
+        ),
+        balance2: (if (is-eq tx-sender (get participant2 channel))
+          (- (get balance2 channel) amount)
+          (+ (get balance2 channel) amount)
+        ),
+        nonce: nonce
+      })
+    )
+    
+    (ok true)
+  )
+)
