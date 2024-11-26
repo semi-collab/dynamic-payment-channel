@@ -166,3 +166,25 @@
     (ok true)
   )
 )
+
+(define-public (dispute-channel (channel-id (buff 32)) (proposed-balance1 uint) (proposed-balance2 uint) (nonce uint) (signature (buff 65)))
+  (let (
+    (channel (unwrap! (map-get? channels { channel-id: channel-id }) ERR-CHANNEL-NOT-FOUND))
+  )
+    (asserts! (is-eq (get state channel) "OPEN") ERR-CHANNEL-CLOSED)
+    (asserts! (> nonce (get nonce channel)) ERR-INVALID-STATE)
+    (try! (validate-signature channel-id (+ proposed-balance1 proposed-balance2) nonce signature))
+    
+    (map-set channels
+      { channel-id: channel-id }
+      (merge channel {
+        balance1: proposed-balance1,
+        balance2: proposed-balance2,
+        nonce: nonce,
+        state: "DISPUTED"
+      })
+    )
+    
+    (ok true)
+  )
+)
