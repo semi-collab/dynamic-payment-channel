@@ -1,5 +1,6 @@
-;; Dynamic Payment Channel Network Contract
-;; Manages secure, efficient payment channels between participants
+;; title: Dynamic Payment Channel Network
+;; summary: A smart contract for managing dynamic payment channels on the Stacks blockchain.
+;; description: This contract allows participants to create, fund, and manage payment channels. It supports functionalities such as making payments, closing channels, and resolving disputes. The contract ensures secure and efficient transactions between participants using Clarity smart contracts.
 
 (define-constant CONTRACT-OWNER tx-sender)
 (define-constant ERR-NOT-AUTHORIZED (err u100))
@@ -9,6 +10,27 @@
 (define-constant ERR-INVALID-SIGNATURE (err u104))
 (define-constant ERR-CHANNEL-CLOSED (err u105))
 (define-constant ERR-DISPUTE-PERIOD (err u106))
+(define-constant ERR-INVALID-INPUT (err u107))
+
+;; Input validation functions
+(define-private (is-valid-channel-id (channel-id (buff 32)))
+  (and 
+    (> (len channel-id) u0)
+    (<= (len channel-id) u32)
+  )
+)
+
+(define-private (is-valid-deposit (amount uint))
+  (> amount u0)
+)
+
+(define-private (is-valid-signature (signature (buff 65)))
+  (and 
+    (is-eq (len signature) u65)
+    ;; Add additional signature validation if needed
+    true
+  )
+)
 
 ;; Storage for payment channels
 (define-map payment-channels 
@@ -39,6 +61,11 @@
   (initial-deposit uint)
 )
   (begin
+    ;; Validate inputs
+    (asserts! (is-valid-channel-id channel-id) ERR-INVALID-INPUT)
+    (asserts! (is-valid-deposit initial-deposit) ERR-INVALID-INPUT)
+    (asserts! (not (is-eq tx-sender participant-b)) ERR-INVALID-INPUT)
+
     ;; Ensure channel doesn't already exist
     (asserts! (is-none (map-get? payment-channels {
       channel-id: channel-id, 
@@ -87,6 +114,11 @@
         ERR-CHANNEL-NOT-FOUND
       ))
     )
+    ;; Validate inputs
+    (asserts! (is-valid-channel-id channel-id) ERR-INVALID-INPUT)
+    (asserts! (is-valid-deposit additional-funds) ERR-INVALID-INPUT)
+    (asserts! (not (is-eq tx-sender participant-b)) ERR-INVALID-INPUT)
+
     ;; Validate channel is open
     (asserts! (get is-open channel) ERR-CHANNEL-CLOSED)
 
@@ -152,6 +184,12 @@
         (uint-to-buff balance-b)
       ))
     )
+    ;; Validate inputs
+    (asserts! (is-valid-channel-id channel-id) ERR-INVALID-INPUT)
+    (asserts! (is-valid-signature signature-a) ERR-INVALID-INPUT)
+    (asserts! (is-valid-signature signature-b) ERR-INVALID-INPUT)
+    (asserts! (not (is-eq tx-sender participant-b)) ERR-INVALID-INPUT)
+
     ;; Validate channel is open
     (asserts! (get is-open channel) ERR-CHANNEL-CLOSED)
 
@@ -221,6 +259,11 @@
         (uint-to-buff proposed-balance-b)
       ))
     )
+    ;; Validate inputs
+    (asserts! (is-valid-channel-id channel-id) ERR-INVALID-INPUT)
+    (asserts! (is-valid-signature signature) ERR-INVALID-INPUT)
+    (asserts! (not (is-eq tx-sender participant-b)) ERR-INVALID-INPUT)
+
     ;; Validate channel is open
     (asserts! (get is-open channel) ERR-CHANNEL-CLOSED)
 
@@ -272,6 +315,10 @@
       (proposed-balance-a (get balance-a channel))
       (proposed-balance-b (get balance-b channel))
     )
+    ;; Validate inputs
+    (asserts! (is-valid-channel-id channel-id) ERR-INVALID-INPUT)
+    (asserts! (not (is-eq tx-sender participant-b)) ERR-INVALID-INPUT)
+
     ;; Ensure dispute period has passed
     (asserts! 
       (>= block-height (get dispute-deadline channel)) 
